@@ -1,0 +1,49 @@
+name: deploy to gh pages
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+
+      - name: Cache pip
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Build HTML
+        run: |
+          make clean
+          make html
+
+      - name: Add github pages metadata
+        run: |
+          touch build/html/.nojekyll
+          echo 'notes.andriimaletskyi.com' > build/html/CNAME
+
+      - name: commit and deploy (quite ugly)
+        run: |
+          cd build/html
+          git init
+          cp ../../.git/config ./.git/config
+          git config --local user.name "Andrii Maletskyi"
+          git config --local user.email "andrii.maletskyi@gmail.com"
+          git add -A
+          git commit -m build
+          git push --force ${GITHUB_SERVER_URL}/${{ github.repository }}.git HEAD:gh-pages
+          cd ../..
+          rm -rf build
