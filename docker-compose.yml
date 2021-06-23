@@ -1,0 +1,15 @@
+version: "3"
+services:
+  app:
+    image: python:3.9
+    command: sleep infinity
+    volumes:
+      - .:/host
+    stop_signal: SIGKILL
+  nginx:
+    image: nginx
+    volumes:
+      - ./build/html:/usr/share/nginx/html
+    ports:
+      - "8010:80"
+    stop_signal: SIGKILL
